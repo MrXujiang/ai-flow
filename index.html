@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工作流搭建器</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- 引入jsPlumb库 -->
+    <script src="draw.js"></script>
+</head>
+<body>
+<div class="workflow-builder">
+    <!-- 头部 -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">W</div>
+            <h1>工作流引擎</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                </svg>
+                <a href="https://mindlink.turntip.cn">AI智能文档</a>
+            </button>
+            <button class="btn btn-secondary" id="preview-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                <a href="http://pxcharts.com">多维表格编辑器</a>
+            </button>
+            <button class="btn btn-primary" id="save-btn">
+                <a href="https://jitword.com">在线Word协同编辑器</a>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主体内容 -->
+    <div class="main-content">
+        <!-- 左侧节点面板 -->
+        <div class="node-panel">
+            <div class="node-category">
+                <h3>节点库</h3>
+                <div class="search-box">
+                    <input type="text" placeholder="搜索节点...">
+                </div>
+            </div>
+
+            <div class="node-category">
+                <h3>基础节点</h3>
+                <div class="node-grid">
+                    <div class="node-item" data-type="start">
+                        <div class="node-icon start-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </div>
+                        <span>开始</span>
+                    </div>
+                    <div class="node-item" data-type="input">
+                        <div class="node-icon input-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
+                            </svg>
+                        </div>
+                        <span>输入</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="node-category">
+                <h3>处理节点</h3>
+                <div class="node-grid">
+                    <div class="node-item" data-type="transform">
+                        <div class="node-icon transform-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </div>
+                        <span>文本处理</span>
+                    </div>
+                    <div class="node-item" data-type="code">
+                        <div class="node-icon code-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                            </svg>
+                        </div>
+                        <span>代码</span>
+                    </div>
+                    <div class="node-item" data-type="function">
+                        <div class="node-icon function-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </div>
+                        <span>函数</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="node-category">
+                <h3>流程控制</h3>
+                <div class="node-grid">
+                    <div class="node-item" data-type="condition">
+                        <div class="node-icon condition-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <span>条件</span>
+                    </div>
+                    <div class="node-item" data-type="loop">
+                        <div class="node-icon loop-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 1l4 4-4 4"></path>
+                                <path d="M3 11V9a4 4 0 014-4h14"></path>
+                                <path d="M7 23l-4-4 4-4"></path>
+                                <path d="M21 13v2a4 4 0 01-4 4H3"></path>
+                            </svg>
+                        </div>
+                        <span>循环</span>
+                    </div>
+                    <div class="node-item" data-type="timer">
+                        <div class="node-icon timer-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <span>定时器</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="node-category">
+                <h3>集成节点</h3>
+                <div class="node-grid">
+                    <div class="node-item" data-type="database">
+                        <div class="node-icon database-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            </svg>
+                        </div>
+                        <span>数据库</span>
+                    </div>
+                    <div class="node-item" data-type="api">
+                        <div class="node-icon api-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                            </svg>
+                        </div>
+                        <span>API</span>
+                    </div>
+                    <div class="node-item" data-type="notification">
+                        <div class="node-icon notification-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 01-3.46 0"></path>
+                            </svg>
+                        </div>
+                        <span>通知</span>
+                    </div>
+                    <div class="node-item" data-type="output">
+                        <div class="node-icon output-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <span>输出</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间画布 -->
+        <div class="canvas-container">
+            <div class="canvas" id="workflow-canvas">
+                <!-- 网格背景由CSS生成 -->
+                <div class="canvas-grid"></div>
+                <!-- 节点将通过JS动态添加 -->
+            </div>
+
+            <!-- 缩略图 -->
+            <div id="minimap-container">
+                <canvas id="minimap-canvas" width="200" height="150"></canvas>
+                <div id="minimap-viewport"></div>
+            </div>
+        </div>
+
+        <!-- 右侧属性面板 -->
+        <div class="property-panel">
+            <div class="property-header">
+                <h3>节点属性</h3>
+                <button class="close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="property-content">
+                <div class="no-selection" id="no-selection">请选择一个节点查看属性</div>
+
+                <div class="property-form" id="property-form" style="display: none;">
+                    <div class="node-info">
+                        <div class="node-info-icon">C</div>
+                        <div class="node-info-text">
+                            <div class="node-info-title">代码</div>
+                            <div class="node-info-id">ID: node-123</div>
+                        </div>
+                    </div>
+
+                    <div class="property-tabs">
+                        <button class="tab-btn active" data-tab="basic">基本属性</button>
+                        <button class="tab-btn" data-tab="advanced">高级</button>
+                    </div>
+
+                    <!-- 节点属性 -->
+                    <div class="tab-content" id="basic-tab">
+                        <div id="node-properties">
+                            <div class="form-group">
+                                <label>名称</label>
+                                <input type="text" id="node-name" class="form-control">
+                            </div>
+
+                            <div class="form-group code-editor-container">
+                                <label>代码</label>
+                                <select class="form-control">
+                                    <option>JavaScript</option>
+                                    <option>Python</option>
+                                    <option>TypeScript</option>
+                                </select>
+                                <textarea id="code-editor" class="form-control code-editor">console.log("Hello World");</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>描述</label>
+                                <textarea id="node-description" class="form-control" placeholder="节点描述..."></textarea>
+                            </div>
+
+                            // 更新节点样式选择表单
+                            <div class="form-group">
+                                <label>节点样式</label>
+                                <select id="node-style" class="form-control">
+                                    <option value="default">默认</option>
+                                    <option value="modern">现代</option>
+                                    <option value="flat">扁平</option>
+                                    <option value="rounded">圆角</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>样式</label>
+                                <select class="form-control">
+                                    <option>默认</option>
+                                    <option>简约</option>
+                                    <option>现代</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 连接线属性 -->
+                        <div id="connection-properties" style="display: none;">
+                            <div class="form-group">
+                                <label>标签</label>
+                                <input type="text" id="connection-label" class="form-control" placeholder="连接线标签">
+                            </div>
+                            <div class="form-group">
+                                <label>颜色</label>
+                                <input type="color" id="connection-color" class="form-control color-picker" value="#5c6bc0">
+                            </div>
+                            <div class="form-group">
+                                <label>线宽</label>
+                                <input type="number" id="connection-width" class="form-control" min="1" max="10" value="2">
+                            </div>
+                            <div class="form-group">
+                                <label>样式</label>
+                                <select id="connection-style" class="form-control">
+                                    <option value="Bezier">贝塞尔曲线</option>
+                                    <option value="Straight">直线</option>
+                                    <option value="Flowchart">流程图</option>
+                                    <option value="StateMachine">状态机</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="advanced-tab" style="display: none;">
+                        <div class="form-group">
+                            <label>超时设置 (毫秒)</label>
+                            <input type="number" id="node-timeout" class="form-control" value="5000">
+                        </div>
+                        <div class="form-group">
+                            <label>重试次数</label>
+                            <input type="number" id="node-retry-count" class="form-control" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>重试延迟 (毫秒)</label>
+                            <input type="number" id="node-retry-delay" class="form-control" value="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>优先级</label>
+                            <select id="node-priority" class="form-control">
+                                <option value="high">高</option>
+                                <option value="medium" selected>中</option>
+                                <option value="low">低</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>标签 (用逗号分隔)</label>
+                            <input type="text" id="node-tags" class="form-control" placeholder="标签1, 标签2, ...">
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="node-enabled" checked>
+                            <label for="node-enabled">启用节点</label>
+                        </div>
+
+                        <!-- 画布背景设置 -->
+                        <div class="form-group">
+                            <label>画布背景</label>
+                            <select id="background-type" class="form-control">
+                                <option value="grid">网格</option>
+                                <option value="solid">纯色</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>背景颜色</label>
+                            <input type="color" id="background-color" class="form-control color-picker" value="#ffffff">
+                        </div>
+                        <div id="grid-settings">
+                            <div class="form-group">
+                                <label>网格大小 (像素)</label>
+                                <input type="number" id="grid-size" class="form-control" min="5" max="50" value="20">
+                            </div>
+                            <div class="form-group">
+                                <label>网格颜色</label>
+                                <input type="color" id="grid-color" class="form-control color-picker" value="#e0e0e0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部工具栏 -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <button class="tool-btn" id="zoom-in-btn" title="放大">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    <line x1="11" y1="8" x2="11" y2="14"></line>
+                    <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+            </button>
+            <button class="tool-btn" id="zoom-out-btn" title="缩小">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+            </button>
+            <button class="tool-btn" id="reset-zoom-btn" title="重置缩放">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path>
+                </svg>
+            </button>
+            <span id="zoom-level" class="zoom-level">100%</span>
+        </div>
+        <div class="toolbar-right">
+            <button class="btn btn-secondary" id="export-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                导出JSON
+            </button>
+            <button class="btn btn-primary" id="run-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                运行
+            </button>
+        </div>
+    </div>
+
+    <!-- 预览模态窗口 -->
+    <div id="preview-modal" class="preview-mode" style="display: none;">
+        <div class="preview-container">
+            <div class="preview-header">
+                <h3>工作流预览</h3>
+                <div class="close-icon" id="close-preview">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="preview-content">
+                <div class="preview-tabs">
+                    <button class="preview-tab active" data-tab="visual">可视化预览</button>
+                    <button class="preview-tab" data-tab="json">JSON结构</button>
+                </div>
+                <div class="preview-tab-content" id="visual-preview">
+                    <div class="preview-canvas-container">
+                        <!-- The interactive preview canvas will be created dynamically in JavaScript -->
+                        <canvas id="preview-canvas" style="display: none;"></canvas>
+                    </div>
+                    <div class="preview-info">
+                        <h4>工作流信息</h4>
+                        <div id="workflow-info">
+                            <p><strong>节点数量：</strong><span id="node-count">0</span></p>
+                            <p><strong>连接数量：</strong><span id="connection-count">0</span></p>
+                        </div>
+                        <h4>节点列表</h4>
+                        <div id="node-list" class="preview-list"></div>
+                    </div>
+                </div>
+                <div class="preview-tab-content" id="json-preview" style="display: none;">
+                    <pre id="json-content" class="json-viewer"></pre>
+                </div>
+            </div>
+            <div class="preview-footer">
+                <button id="close-preview-btn" class="btn btn-secondary">关闭预览</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 保存对话框 -->
+    <div id="save-modal" class="save-dialog" style="display: none;">
+        <div class="save-container">
+            <div class="save-header">
+                <h3>保存工作流</h3>
+                <div class="close-icon" id="close-save">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="save-form">
+                <div class="form-group">
+                    <label>工作流名称</label>
+                    <input type="text" id="workflow-name" class="form-control" placeholder="输入工作流名称" value="我的工作流">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="workflow-description" class="form-control" placeholder="工作流描述..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>版本</label>
+                    <input type="text" id="workflow-version" class="form-control" value="1.0.0">
+                </div>
+                <div class="form-group">
+                    <label>权限</label>
+                    <select id="workflow-permission" class="form-control">
+                        <option value="private">私有</option>
+                        <option value="public">公开</option>
+                        <option value="shared">共享</option>
+                    </select>
+                </div>
+                <div class="save-actions">
+                    <button id="cancel-save" class="btn btn-secondary">取消</button>
+                    <button id="confirm-save" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI智能助手悬浮按钮 -->
+<button class="ai-float-btn" id="ai-assistant-btn" title="AI智能助手">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2Z"></path>
+        <path d="M9 18h6"></path>
+        <path d="M10 22h4"></path>
+    </svg>
+</button>
+
+<!-- AI智能助手面板 -->
+<div id="ai-assistant-panel" class="ai-assistant-panel" style="display: none;">
+    <div class="ai-panel-header">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 1 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" x2="12" y1="19" y2="22"></line>
+            </svg>
+            AI智能助手
+        </h3>
+        <button class="close-btn" id="close-ai-panel">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="ai-tabs">
+        <button class="ai-tab active" data-ai-tab="generate">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            生成流程
+        </button>
+        <button class="ai-tab" data-ai-tab="optimize">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"></path>
+                <path d="m19 9-5 5-4-4-3 3"></path>
+            </svg>
+            智能优化
+        </button>
+        <button class="ai-tab" data-ai-tab="suggest">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <path d="M12 17h.01"></path>
+            </svg>
+            节点推荐
+        </button>
+        <button class="ai-tab" data-ai-tab="chat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            AI对话
+        </button>
+    </div>
+
+    <div class="ai-content">
+        <!-- 生成流程面板 -->
+        <div class="ai-tab-content active" id="ai-generate-tab">
+            <div class="ai-section">
+                <label>描述你的工作流需求</label>
+                <textarea id="ai-workflow-prompt" class="ai-textarea" placeholder="例如：创建一个用户注册流程，包括输入验证、数据库存储和邮件通知..."></textarea>
+                <div class="ai-examples">
+                    <p class="ai-examples-title">快速示例：</p>
+                    <button class="ai-example-btn" data-prompt="创建一个用户登录流程，包括输入验证、身份认证和登录成功后的通知">🔐 用户登录流程</button>
+                    <button class="ai-example-btn" data-prompt="设计一个数据处理流程，从数据库获取数据，进行转换处理，然后输出结果">📊 数据处理流程</button>
+                    <button class="ai-example-btn" data-prompt="创建一个定时任务流程，每天准时调用API获取数据并生成报表">⏰ 定时任务</button>
+                </div>
+                <button class="ai-action-btn" id="ai-generate-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="8 12 12 16 16 12"></polyline>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                    </svg>
+                    生成工作流
+                </button>
+            </div>
+        </div>
+
+        <!-- 智能优化面板 -->
+        <div class="ai-tab-content" id="ai-optimize-tab">
+            <div class="ai-section">
+                <div class="ai-info-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    AI将分析当前工作流，提供性能优化和逻辑改进建议
+                </div>
+                <div id="ai-optimization-result" class="ai-result-box">
+                    <p class="ai-placeholder">点击下方按钮开始分析...</p>
+                </div>
+                <button class="ai-action-btn" id="ai-optimize-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                    </svg>
+                    分析并优化
+                </button>
+            </div>
+        </div>
+
+        <!-- 节点推荐面板 -->
+        <div class="ai-tab-content" id="ai-suggest-tab">
+            <div class="ai-section">
+                <div class="ai-info-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                    </svg>
+                    选中一个节点，AI将基于上下文推荐下一个节点
+                </div>
+                <div id="ai-suggestions" class="ai-suggestions-grid">
+                    <p class="ai-placeholder">请在画布中选中一个节点...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI对话面板 -->
+        <div class="ai-tab-content" id="ai-chat-tab">
+            <div class="ai-chat-container">
+                <div id="ai-chat-messages" class="ai-chat-messages">
+                    <div class="ai-message ai-message-assistant">
+                        <div class="ai-message-avatar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="ai-message-content">
+                            你好！我是AI助手。你可以：<br>
+                            • 请求我生成工作流<br>
+                            • 让我优化当前流程<br>
+                            • 咨询最佳实践<br>
+                            • 修改节点属性
+                        </div>
+                    </div>
+                </div>
+                <div class="ai-chat-input-container">
+                    <textarea id="ai-chat-input" class="ai-chat-input" placeholder="输入消息...按Enter发送，Shift+Enter换行"></textarea>
+                    <button class="ai-chat-send-btn" id="ai-chat-send">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
