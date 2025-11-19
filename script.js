@@ -11,6 +11,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabButtons = document.querySelectorAll(".tab-btn")
     const tabContents = document.querySelectorAll(".tab-content")
     const exportBtn = document.getElementById("export-btn")
+    const importBtn = document.getElementById("import-btn")
+    const clearBtn = document.getElementById("clear-btn")
     const runBtn = document.getElementById("run-btn")
     const zoomInBtn = document.getElementById("zoom-in-btn")
     const zoomOutBtn = document.getElementById("zoom-out-btn")
@@ -357,16 +359,18 @@ document.addEventListener("DOMContentLoaded", () => {
         })
 
         // 添加端点
-        // 源端点（输出）
+        // 源端点（输出 - 右侧）
         jsPlumbInstance.addEndpoint(nodeElement, {
+            uuid: `${nodeData.id}-right`,
             anchor: "Right",
             isSource: true,
             maxConnections: -1,
             connectorStyle: { stroke: "#5c6bc0", strokeWidth: 2 },
         })
 
-        // 目标端点（输入）
+        // 目标端点（输入 - 左侧）
         jsPlumbInstance.addEndpoint(nodeElement, {
+            uuid: `${nodeData.id}-left`,
             anchor: "Left",
             isTarget: true,
             maxConnections: -1,
@@ -671,6 +675,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const connections = jsPlumbInstance.getConnections().map((conn) => ({
             source: conn.source.id,
             target: conn.target.id,
+            sourceEndpoint: conn.sourceEndpoint?.uuid || `${conn.source.id}-right`,
+            targetEndpoint: conn.targetEndpoint?.uuid || `${conn.target.id}-left`,
             label: conn.getLabel() || "",
             style: {
                 stroke: conn.getPaintStyle().stroke,
@@ -693,6 +699,217 @@ document.addEventListener("DOMContentLoaded", () => {
         linkElement.setAttribute("href", dataUri)
         linkElement.setAttribute("download", exportFileDefaultName)
         linkElement.click()
+    }
+
+    // 导入工作流
+    function importWorkflow(workflow) {
+        // 严格验证工作流数据格式
+        if (!workflow || typeof workflow !== "object") {
+            alert("导入失败：无效的工作流数据格式 - 必须是JSON对象")
+            return
+        }
+        // 确保nodes和connections是数组，即使为空
+        workflow.nodes = Array.isArray(workflow.nodes) ? workflow.nodes : []
+        workflow.connections = Array.isArray(workflow.connections) ? workflow.connections : []
+
+        // 如果没有节点和连接，显示提示
+        if (workflow.nodes.length === 0 && workflow.connections.length === 0) {
+            alert("导入失败：工作流数据为空")
+            return
+        }
+
+        // 清空当前画布
+        jsPlumbInstance.deleteEveryConnection()
+        nodes.forEach((node) => {
+            const element = document.getElementById(node.id)
+            if (element) {
+                element.remove()
+            }
+        })
+        nodes.length = 0
+        selectedNode = null
+
+        // 更新节点计数器到最大ID值
+        const maxNodeId = workflow.nodes.reduce((max, node) => {
+            let idNum = 0
+            try {
+                idNum = parseInt(node.id.replace("node-", ""), 10)
+                // 如果解析失败（非数字），使用默认值0
+                idNum = isNaN(idNum) ? 0 : idNum
+            } catch (error) {
+                idNum = 0
+            }
+            return idNum > max ? idNum : max
+        }, 0)
+        nodeCounter = maxNodeId
+
+        // 重新创建所有节点
+        workflow.nodes.forEach((nodeData) => {
+            try {
+                // 验证节点基本信息
+                if (!nodeData || !nodeData.id || !nodeData.position || typeof nodeData.position.x !== "number" || typeof nodeData.position.y !== "number") {
+                    console.error("跳过无效节点:", nodeData)
+                    return
+                }
+
+                // 创建DOM元素
+                const nodeElement = document.createElement("div")
+                nodeElement.id = nodeData.id
+                nodeElement.className = `workflow-node ${nodeStyles.default.className}`
+                nodeElement.style.left = `${nodeData.position.x}px`
+                nodeElement.style.top = `${nodeData.position.y}px`
+
+                // 设置节点内容
+                const nodeName = getNodeName(nodeData.type || "default")
+                nodeElement.innerHTML = `
+                    <div class="workflow-node-header">
+                        <div class="workflow-node-icon" style="background-color: ${nodeTypeColors[nodeData.type || "default"]}; color: ${nodeTypeTextColors[nodeData.type || "default"]}">
+                            ${nodeTypeIcons[nodeData.type || "default"] || ""}
+                        </div>
+                        <div class="workflow-node-title">${nodeData.data?.name || nodeName}</div>
+                    </div>
+                `
+
+                // 添加到画布
+                canvas.appendChild(nodeElement)
+
+                // 初始化jsPlumb节点
+                jsPlumbInstance.draggable(nodeElement, {
+                    containment: canvas,
+                    grid: [backgroundSettings.gridSize, backgroundSettings.gridSize],
+                    drag: function (event, ui) {
+                        // 更新节点位置数据
+                        const node = nodes.find((n) => n.id === nodeData.id)
+                        if (node) {
+                            node.position.x = ui.position.left
+                            node.position.y = ui.position.top
+                        }
+                        updateMinimap()
+                    },
+                })
+
+                // 为节点添加连接点
+                jsPlumbInstance.addEndpoint(
+                    nodeElement,
+                    {
+                        uuid: `${nodeData.id}-right`,
+                        anchor: "Right",
+                        isSource: true,
+                        maxConnections: -1,
+                        endpoint: ["Dot", { radius: 5 }],
+                        paintStyle: { fill: nodeTypeColors[nodeData.type || "default"] },
+                        hoverPaintStyle: { fill: "#1e88e5" },
+                    }
+                )
+
+                jsPlumbInstance.addEndpoint(
+                    nodeElement,
+                    {
+                        uuid: `${nodeData.id}-left`,
+                        anchor: "Left",
+                        isTarget: true,
+                        maxConnections: -1,
+                        endpoint: ["Dot", { radius: 5 }],
+                        paintStyle: { fill: nodeTypeColors[nodeData.type || "default"] },
+                        hoverPaintStyle: { fill: "#1e88e5" },
+                    }
+                )
+
+                // 添加到节点数组
+                const nodeToAdd = {
+                    ...nodeData,
+                    // 确保有必要的默认值
+                    type: nodeData.type || "default",
+                    data: nodeData.data || {},
+                    position: {
+                        x: nodeData.position.x,
+                        y: nodeData.position.y
+                    }
+                }
+                nodes.push(nodeToAdd)
+
+                // 添加节点事件监听（如点击、选择等）
+                nodeElement.addEventListener("click", (e) => {
+                    e.stopPropagation()
+                    selectNode(nodeToAdd)
+                })
+
+                // 添加删除按钮事件监听（仅当存在时）
+                const deleteBtn = nodeElement.querySelector(".delete-btn")
+                if (deleteBtn) {
+                    deleteBtn.addEventListener("click", (e) => {
+                        e.stopPropagation()
+                        deleteNode(nodeToAdd.id)
+                    })
+                }
+
+                // 更新节点的自定义样式（如果有的话）
+                if (nodeData.data?.style && nodeData.data.style !== "default") {
+                    updateNodeStyle(nodeToAdd.id, nodeData.data.style)
+                }
+            } catch (error) {
+                console.error("导入节点失败:", nodeData.id, error)
+                // 继续处理下一个节点
+            }
+        })
+
+        // 重新创建所有连接
+        workflow.connections.forEach((connData) => {
+            try {
+                // 验证连接基本信息
+                if (!connData || !connData.source || !connData.target) {
+                    console.error("跳过无效连接:", connData)
+                    return
+                }
+
+                const sourceElement = document.getElementById(connData.source)
+                const targetElement = document.getElementById(connData.target)
+
+                if (sourceElement && targetElement) {
+                    // 创建连接
+                    // 使用与正常创建连接相同的配置 - 确保从右侧端点连接到左侧端点
+                    const connection = jsPlumbInstance.connect({
+                        source: sourceElement,
+                        target: targetElement,
+                        endpoint: ["Dot", { radius: 5 }],
+                        paintStyle: {
+                            stroke: connData.style?.stroke || "#5c6bc0",
+                            strokeWidth: connData.style?.strokeWidth || 2,
+                        },
+                        connector: connData.style?.connector || ["Bezier", { curviness: 50 }],
+                        // 明确指定从源节点的右侧端点连接到目标节点的左侧端点
+                        anchors: ["Right", "Left"],
+                        // 确保符合源/目标设置
+                        isSource: true,
+                        isTarget: true,
+                    })
+
+                    // 设置标签（如果有的话）
+                    if (connData.label) {
+                        connection.setLabel(connData.label)
+                    }
+                } else {
+                    console.error("跳过连接 - 节点不存在:", connData.source, "→", connData.target)
+                }
+            } catch (error) {
+                console.error("导入连接失败:", connData, error)
+                // 继续处理下一个连接
+            }
+        })
+
+        // 更新缩略图
+        updateMinimap()
+
+        // 更新背景设置（如果有的话）
+        if (workflow.backgroundSettings) {
+            Object.assign(backgroundSettings, workflow.backgroundSettings)
+            applyBackgroundSettings()
+        }
+
+        // 显示导入结果
+        const importedNodes = workflow.nodes.length
+        const importedConnections = workflow.connections.length
+        alert(`工作流导入成功！\n- 导入节点：${nodes.length}/${importedNodes}\n- 导入连接：${jsPlumbInstance.getConnections().length}/${importedConnections}`)
     }
 
     // 运行工作流
@@ -1056,6 +1273,75 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 事件监听：导出按钮
     exportBtn.addEventListener("click", exportWorkflow)
+
+    // 事件监听：导入按钮
+    importBtn.addEventListener("click", () => {
+        // 创建隐藏的文件输入元素
+        const fileInput = document.createElement("input")
+        fileInput.type = "file"
+        fileInput.accept = ".json"
+        fileInput.style.display = "none"
+
+        // 监听文件选择
+        fileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0]
+            if (!file) return
+
+            const reader = new FileReader()
+            reader.onload = (event) => {
+                try {
+                    let content = event.target.result;
+                    // 移除可能存在的UTF-8 BOM（某些浏览器保存文件时会添加）
+                    if (content.charCodeAt(0) === 0xFEFF) {
+                        content = content.slice(1);
+                    }
+                    const workflow = JSON.parse(content)
+                    importWorkflow(workflow)
+                } catch (error) {
+                    alert("JSON格式错误，请检查文件内容")
+                    console.error("Import error:", error)
+                }
+            }
+            reader.readAsText(file)
+        })
+
+        // 添加到文档并触发点击
+        document.body.appendChild(fileInput)
+        fileInput.click()
+
+        // 移除元素
+        setTimeout(() => {
+            document.body.removeChild(fileInput)
+        }, 100)
+    })
+
+    // 事件监听：清除画布按钮
+    clearBtn.addEventListener("click", () => {
+        // 确认清除操作
+        if (confirm("确定要清除整个画布吗？此操作不可撤销！")) {
+            // 1. 清除所有连接
+            jsPlumbInstance.deleteEveryConnection()
+            // 2. 清除所有节点和它们的端点
+            nodes.forEach((node) => {
+                const element = document.getElementById(node.id)
+                if (element) {
+                    // 清除节点的所有端点
+                    jsPlumbInstance.removeAllEndpoints(element)
+                    // 移除节点DOM元素
+                    element.remove()
+                }
+            })
+            // 3. 清除所有剩余的端点（防止残留）
+            jsPlumbInstance.deleteEveryEndpoint()
+            // 4. 重置节点数组和计数器
+            nodes.length = 0
+            selectedNode = null
+            nodeCounter = 0
+            // 5. 更新缩略图
+            updateMinimap()
+            alert("画布已清除！")
+        }
+    })
 
     // 事件监听：运行按钮
     runBtn.addEventListener("click", runWorkflow)
